@@ -266,7 +266,6 @@ the_maximum
 
 
 the_maximum = the_maximum.stack(level=0).unstack(level=0)
-
 drug_counter = 0
 for treatment in treatment_list:
     quartiles = the_maximum[treatment].quantile([.25,.5,.75]).round(2)
@@ -279,9 +278,9 @@ for treatment in treatment_list:
 
     if drug_counter == 0:
         print(f"------------------------------------------------------------")
-    print(f"The lower quartile of {treatment} treatments is: {lowerq}")
-    print(f"The upper quartile of {treatment} treatments is: {upperq}")
-    print(f"The interquartile range of {treatment} treatments is: {iqr}")
+    print(f"The lower quartile of {treatment} treatments is: {minimum_q}")
+    print(f"The upper quartile of {treatment} treatments is: {maximum_q}")
+    print(f"The interquartile range of {treatment} treatments is: {interquartile_range}")
     print(f"Values below {lower_bound} could be {treatment} outliers.")
     print(f"Values above {upper_bound} could be {treatment} outliers.")
     print(f"------------------------------------------------------------")
