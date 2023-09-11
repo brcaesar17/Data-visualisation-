@@ -1,0 +1,342 @@
+# Dependencies and Setup
+
+import scipy.stats as st
+import numpy as np
+from matplotlib import pyplot as plt
+from scipy.stats import linregress
+import pandas as pd
+
+# Study data filesschool_data_to_load = Path("../Resources/schools_complete.csv")
+mouse_metadata_path = ("../data/Mouse_metadata.csv")
+study_results_path = ("../data/Study_results.csv")
+
+# Read the mouse data and the study results
+mouse_metadata = pd.read_csv(mouse_metadata_path)
+study_results = pd.read_csv(study_results_path)
+
+# Combine the data into a single DataFrame
+full_metadata = pd.merge (mouse_metadata, study_results, how='inner', on=['Mouse ID'])
+
+# Display the data table for preview
+full_metadata.head()
+
+
+
+
+# Checking the number of mice in the full DataFrame.
+full_metadata ['Mouse ID'].count()
+
+# Checking the number of mice.
+full_metadata['Mouse ID'].unique()
+
+
+Mice_count = full_metadata['Mouse ID'].nunique()
+Mice_count
+
+
+# Our data should be uniquely identified by Mouse ID and Timepoint
+# Get the duplicate mice by ID number that shows up for Mouse ID and Timepoint. 
+the_dublicated = full_metadata.loc[full_metadata.duplicated(subset=['Mouse ID', 'Timepoint']),'Mouse ID'].unique() 
+the_dublicated
+
+
+# Optional: Get all the data for the duplicate mouse ID. 
+duplicate_rows = full_metadata.duplicated()
+duplicate_items = full_metadata.loc[duplicate_rows]
+print(duplicate_items)
+
+
+# Optional: Get all the data for the duplicate mouse ID. 
+duplicated_list = full_metadata.loc[full_metadata ["Mouse ID"] == "g989", :]
+duplicated_list
+
+
+duplicated_count = duplicated_list.count()
+duplicated_count
+
+
+# Create a clean DataFrame by dropping the duplicate mouse by its ID.
+drop_duplicate_df = full_metadata[full_metadata['Mouse ID']!='g989']
+drop_duplicate_df
+drop_duplicate_df['Mouse ID'].nunique()
+
+
+drop_duplicate_df2 = full_metadata[full_metadata['Mouse ID'].isin(the_dublicated)==False]
+drop_duplicate_df2
+
+
+# Checking the number of unique mice in the clean DataFrame.
+drop_duplicate_df2.nunique()
+
+
+
+# Checking the number of rows in the clean DataFrame.
+drop_duplicate_df2.count()
+
+
+# Checking the number of mice in the clean DataFrame.
+drop_duplicate_df2['Mouse ID'].count()
+
+
+# Generate a summary statistics table of mean, median, variance, standard deviation, and SEM of the tumor volume for each regimen
+
+# Use groupby and summary statistical methods to calculate the following properties of each drug regimen: 
+# mean, median, variance, standard deviation, and SEM of the tumor volume. 
+# Assemble the resulting series into a single summary DataFrame.
+
+
+Mean_Tumor_Volume = full_metadata.groupby(['Drug Regimen'])['Tumor Volume (mm3)'].mean()
+Mean_Tumor_Volume
+
+
+Median_Tumor_Volume = full_metadata.groupby(['Drug Regimen'])['Tumor Volume (mm3)'].median()
+Median_Tumor_Volume
+
+
+
+varicance_Tumor_Volume = full_metadata.groupby(['Drug Regimen'])['Tumor Volume (mm3)'].var()
+varicance_Tumor_Volume 
+#print(full_metadata.groupby(['drug regimen'])['Tumor Volume (mm3)'].var())
+
+
+std_Tumor_Volume = full_metadata.groupby(['Drug Regimen'])['Tumor Volume (mm3)'].std()
+std_Tumor_Volume 
+
+
+sem_Tumor_Volume = full_metadata.groupby(['Drug Regimen'])['Tumor Volume (mm3)'].sem()
+sem_Tumor_Volume 
+
+
+
+statistics_df = pd.DataFrame ({
+    'Mean Tumor Volume':Mean_Tumor_Volume,
+    'Median Tumor Volume':Median_Tumor_Volume,
+     'Tumor Volume Variance':varicance_Tumor_Volume,
+    'Tumor Volume Std. Dev.':std_Tumor_Volume,
+    'Tumor Volume Std. Err':sem_Tumor_Volume 
+    
+})
+statistics_df.head()
+
+
+# A more advanced method to generate a summary statistics table of mean, median, variance, standard deviation,
+# and SEM of the tumor volume for each regimen (only one method is required in the solution)
+
+# Using the aggregation method, produce the same summary statistics in a single line
+
+
+aggregation_method =  drop_duplicate_df.groupby(['Drug Regimen'])[['Tumor Volume (mm3)']].agg(['mean', 'median', 'var', 'std', 'sem',])
+aggregation_method
+
+
+# Generate a bar plot showing the total number of rows (Mouse ID/Timepoints) for each drug regimen using Pandas.
+
+
+count_Timepoint = full_metadata.groupby(['Drug Regimen'])['Timepoint'].count()
+count_Timepoint.sort_values()
+
+
+observation = drop_duplicate_df.groupby(['Drug Regimen'])['Mouse ID'].count()
+observation.sort_values()
+
+# Generate a bar plot showing the total number of rows (Mouse ID/Timepoints) for each drug regimen using Pandas.
+
+
+bar_chart_plot = count_Timepoint.plot.bar(color='maroon')
+plt.ylabel("# of observed mouse Timpoints")
+
+
+# Generate a bar plot showing the total number of rows (Mouse ID/Timepoints) for each drug regimen using pyplot.
+
+
+x_axis = count_Timepoint.index.values
+y_axis = count_Timepoint.values
+plt.bar(x_axis, y_axis, color='green', alpha=0.5, align='center')
+
+plt.title("Tested by Each Drug")
+plt.xlabel("Drug Regimen")
+plt.ylabel("# of observed mouse Timepoints")
+plt.xticks(rotation="vertical")
+plt.show()
+
+
+gender_distribution = drop_duplicate_df["Sex"].value_counts()
+drop_duplicate_df
+plt.title("Gender Analysis")
+gender_distribution.plot.pie(autopct= "%1.1f%%")
+plt.show()
+
+
+# Generate a pie plot showing the distribution of female versus male mice using pyplot
+
+
+labels = ['Female', 'Male']
+sizes = [49.7999197, 50.200803]
+plot = gender_distribution.plot.pie(y='Total Count', autopct="%1.1f%%")
+plt.title('Male vs Female Mouse Population')
+plt.ylabel('Sex')
+plt.show()
+
+
+# Calculate the final tumor volume of each mouse across four of the treatment regimens:  
+# Capomulin, Ramicane, Infubinol, and Ceftamin
+# Start by getting the last (greatest) timepoint for each mouse
+# Merge this group df with the original DataFrame to get the tumor volume at the last timepoint
+
+
+# Capomulin
+
+
+#list all capomulin drug rows
+Capomulin_info = drop_duplicate_df.loc[drop_duplicate_df ["Drug Regimen"] == "Capomulin",:]
+Capomulin_info.head()
+
+
+# greatestt imepoint for each mouse under capomulin drug
+final_capomulin = Capomulin_info.groupby(['Mouse ID'])['Timepoint'].max()
+final_capomulin.head()
+
+
+merged_final_capomulin = pd.merge(final_capomulin,drop_duplicate_df,on=('Mouse ID','Timepoint'), how='inner')
+merged_final_capomulin.count()
+
+
+#list all capomulin drug rows
+Ramicane_info = drop_duplicate_df.loc[drop_duplicate_df ["Drug Regimen"] == "Ramicane",:]
+Ramicane_info.head()
+
+
+# greatestt imepoint for each mouse under capomulin drug
+final_Ramicane = Ramicane_info.groupby(['Mouse ID'])['Timepoint'].max()
+final_Ramicane.head()
+
+
+merged_final_Ramicane = pd.merge(final_Ramicane,drop_duplicate_df,on=('Mouse ID','Timepoint'), how='inner')
+merged_final_Ramicane.count()
+
+
+#Infubinol
+
+
+#list all capomulin drug rows
+Infubinol_info = drop_duplicate_df.loc[drop_duplicate_df ["Drug Regimen"] == "Infubinol",:]
+Infubinol_info.head()
+
+
+# greatestt imepoint for each mouse under capomulin drug
+final_Infubinol = Infubinol_info.groupby(['Mouse ID'])['Timepoint'].max()
+final_Infubinol.head()
+
+
+merged_final_Infubinol = pd.merge(final_Infubinol,drop_duplicate_df,on=('Mouse ID','Timepoint'), how='inner')
+merged_final_Infubinol.head()
+
+
+#Ceftamin
+
+#list all capomulin drug rows
+Ceftamin_info = drop_duplicate_df.loc[drop_duplicate_df ["Drug Regimen"] == "Ceftamin",:]
+Ceftamin_info.head()
+
+
+# greatestt imepoint for each mouse under capomulin drug
+final_Ceftamin = Ceftamin_info.groupby(['Mouse ID'])['Timepoint'].max()
+final_Ceftamin.head()
+
+
+# Merge the four new data frames with the cleaned data frame
+
+
+merged_final_Ceftamin = pd.merge(final_Ceftamin,drop_duplicate_df,on=('Mouse ID','Timepoint'), how='inner')
+merged_final_Ceftamin.head()
+
+
+max_timepoint_df = pd.merge(pd.merge(pd.merge(merged_final_Ceftamin,merged_final_Infubinol,on='Mouse ID', how='outer'),final_Ramicane,on='Mouse ID', how='outer'),final_capomulin,on='Mouse ID', how='outer')
+max_timepoint_df.head()
+
+treatment_list = ["Capomulin", "Ramicane", "Infubinol", "Ceftamin"]
+
+
+observation = full_metadata [full_metadata ["Drug Regimen"].isin(treatment_list)]
+observation.head()
+
+
+the_maximum = observation.groupby(["Drug Regimen", "Mouse ID"]).agg(tumor_size=("Tumor Volume (mm3)", lambda x: x.iloc[-1]))
+the_maximum
+
+
+the_maximum = the_maximum.stack(level=0).unstack(level=0)
+
+drug_counter = 0
+for treatment in treatment_list:
+    quartiles = the_maximum[treatment].quantile([.25,.5,.75]).round(2)
+    minimum_q = quartiles[0.25].round(2)
+    maximum_q = quartiles[0.75].round(2)
+    interquartile_range = round(maximum_q-minimum_q,2)
+    lower_bound = round(minimum_q - (1.5*interquartile_range),2)
+    upper_bound = round(maximum_q + (1.5*interquartile_range),2)
+
+
+    if drug_counter == 0:
+        print(f"------------------------------------------------------------")
+    print(f"The lower quartile of {treatment} treatments is: {lowerq}")
+    print(f"The upper quartile of {treatment} treatments is: {upperq}")
+    print(f"The interquartile range of {treatment} treatments is: {iqr}")
+    print(f"Values below {lower_bound} could be {treatment} outliers.")
+    print(f"Values above {upper_bound} could be {treatment} outliers.")
+    print(f"------------------------------------------------------------")
+    drug_counter+=1
+
+tumor_volume_data = []
+for treatment in treatment_list:
+    tumor_volume_data.append(list(the_maximum[treatment].dropna()))
+plt.xlabel("treatment")
+plt.xticks([1,2,3,4], treatment_list, rotation=45)
+plt.ylabel("Tumor size")
+plt.title("Tumor size vs treatment")
+plt.boxplot(tumor_volume_data)
+plt.show()
+
+
+one_mouse_test = Capomulin_info.loc[Capomulin_info["Mouse ID"] == "b128",:]
+one_mouse_test.head()
+x_axis = one_mouse_test['Timepoint']
+size_of_tumor = one_mouse_test['Tumor Volume (mm3)']
+plt.title('Capomulin treatmeant of mouse b128')
+plt.plot(x_axis, size_of_tumor,linewidth=1, markersize=11,marker="2",color="red", label="Fahreneit")
+plt.xlabel('Timepoint in Days')
+plt.ylabel('Tumor size in mm3')
+
+
+#scatter plot
+fig1, ax1 = plt.subplots()
+the_average =Capomulin_info.groupby(['Mouse ID']).mean()
+
+marker_size=12
+plt.scatter(the_average['Weight (g)'],the_average['Tumor Volume (mm3)'], color="purple")
+plt.title('Mouse Weight Vs. Average Tumor size')
+plt.xlabel('Weight (g)',fontsize =14)
+plt.ylabel('Averag Tumor Volume (mm3)')
+
+
+# correlation
+
+
+correlation_value = st.pearsonr(the_average['Weight (g)'],the_average['Tumor Volume (mm3)'])
+print(f"The correlation between mouse weight and the average tumor volume is {round(correlation_value[0],2)}")
+
+
+
+(slope, intercept,rvalue, pvalue, stderr) = st.linregress(the_average["Weight (g)"],the_average["Tumor Volume (mm3)"])
+regress_values=the_average["Weight (g)"]* slope + intercept
+line_eq= f"y = {round(slope, 2)} x + {round(intercept, 2)}"
+
+plt.scatter(the_average["Weight (g)"],the_average["Tumor Volume (mm3)"],color='b')
+plt.plot(the_average["Weight (g)"], regress_values, color='red')
+plt.annotate(line_eq,(20,36), fontsize=14)
+plt.xlabel("Weight in (g)")
+plt.ylabel("Tumor size (mm3)")
+plt.title("Weight vs Tumor size for Capomulin")
+print(f"The r-squared is: {round(rvalue**2,3)}")
+plt.show()
+
